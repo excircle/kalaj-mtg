@@ -1,0 +1,5 @@
+// pages/$PAGE.tsx
+export default function $PAGE() {
+    return <div>The is the $PAGE page</div>
+}
+  
