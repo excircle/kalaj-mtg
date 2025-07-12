@@ -14,6 +14,10 @@ export default function Url({ onUrlSubmit }: UrlProps) {
     onUrlSubmit(inputValue.trim())
   }
 
+  const handleClear = () => {
+    setInputValue('')
+  }
+
   return (
     <form onSubmit={handleSubmit} className="w-full max-w-lg">
       <label htmlFor="card-url" className="sr-only">
@@ -25,19 +29,32 @@ export default function Url({ onUrlSubmit }: UrlProps) {
           type="url"
           value={inputValue}
           onChange={e => setInputValue(e.target.value)}
-          placeholder="Card please...."
+          placeholder="Card please…"
           required
-          className="block w-full pl-10 pr-24 py-3 text-sm text-gray-900 border border-gray-300 rounded-lg bg-gray-50 
+          className="block w-full pl-10 pr-32 py-3 text-sm text-gray-900 border border-gray-300 rounded-lg bg-gray-50 
                      focus:ring-blue-500 focus:border-blue-500"
           aria-label="Card JSON URL"
         />
+
+        {/* Clear button */}
+        <button
+          type="button"
+          onClick={handleClear}
+          className="absolute right-2 bottom-1/2 transform translate-y-1/2 px-3 py-1.5 text-sm font-medium
+                     text-gray-700 bg-gray-200 rounded-lg hover:bg-gray-300 focus:ring-4 focus:outline-none focus:ring-gray-300"
+        >
+          Clear
+        </button>
+
+        {/* Fetch button */}
         <button
           type="submit"
-          className="absolute right-2 bottom-1/2 transform translate-y-1/2 px-4 py-2 text-sm font-medium 
+          className="absolute right-20 bottom-1/2 transform translate-y-1/2 px-4 py-2 text-sm font-medium 
                      text-white bg-blue-700 rounded-lg hover:bg-blue-800 focus:ring-4 focus:outline-none focus:ring-blue-300"
         >
           Fetch
         </button>
+
         <div className="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none">
           <svg
             className="w-5 h-5 text-gray-500"
