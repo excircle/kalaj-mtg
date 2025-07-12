@@ -11,9 +11,12 @@ export default function Home() {
     U: 0,
     R: 0,
   })
+  const [total, setTotal] = useState<number>(0)
+  const [totaluniq, setTotaluniq] = useState<number>(0)
   const [error, setError] = useState<string | null>(null)
   const apiUrl = process.env.NEXT_PUBLIC_API_URL
 
+  // fetch the per-color counts
   useEffect(() => {
     if (!apiUrl) {
       setError('API not configured')
@@ -33,11 +36,56 @@ export default function Home() {
       })
   }, [apiUrl])
 
+  // fetch the total count
+  useEffect(() => {
+    if (!apiUrl) return
+
+    fetch(`${apiUrl}/total`)
+      .then(res => {
+        if (!res.ok) throw new Error(`HTTP ${res.status}`)
+        return res.json()
+      })
+      .then((data: { total: number }) => {
+        setTotal(data.total)
+      })
+      .catch(err => {
+        console.error(err)
+        setError('Failed to load total count')
+      })
+  }, [apiUrl])
+
+  // fetch the uniq count
+  useEffect(() => {
+    if (!apiUrl) return
+
+    fetch(`${apiUrl}/totaluniq`)
+      .then(res => {
+        if (!res.ok) throw new Error(`HTTP ${res.status}`)
+        return res.json()
+      })
+      .then((data: { total: number }) => {
+        setTotaluniq(data.total)
+      })
+      .catch(err => {
+        console.error(err)
+        setError('Failed to load total uniq count')
+      })
+  }, [apiUrl])
+
   return (
     <>
       {/* Text Card */}
-      <div className="flex items-center justify-center py-10 px-10 bg-slate-200">
+      <div className="flex items-center justify-center py-2 px-10 bg-slate-200">
         <p>Behold my beautiful collection.</p>
+      </div>
+
+      {/* Total */}
+      <div className="flex items-center justify-center bg-slate-200">
+        <p className="font-bold">Total Count: {total}</p>
+      </div>
+      {/* Total Uniq */}
+      <div className="flex items-center justify-center bg-slate-200">
+        <p className="font-bold">Total UNIQUE Count: {totaluniq}</p>
       </div>
 
       {/* Stats Card */}

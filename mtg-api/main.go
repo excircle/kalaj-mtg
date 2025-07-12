@@ -203,6 +203,46 @@ func cardColors(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
+func total(w http.ResponseWriter, r *http.Request) {
+	db, err := sql.Open("mysql", "kalaj-mtg:kalaj-mtg-pass@tcp(127.0.0.1:3306)/kalaj-mtg")
+	if err != nil {
+		log.Println("db open error:", err)
+		http.Error(w, "Database error", http.StatusInternalServerError)
+		return
+	}
+	defer db.Close()
+
+	var cnt int
+	if err := db.QueryRow(`SELECT COUNT(*) FROM card`).Scan(&cnt); err != nil {
+		log.Println("total query error:", err)
+		http.Error(w, "Database error", http.StatusInternalServerError)
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(map[string]int{"total": cnt})
+}
+
+func totalUniq(w http.ResponseWriter, r *http.Request) {
+	db, err := sql.Open("mysql", "kalaj-mtg:kalaj-mtg-pass@tcp(127.0.0.1:3306)/kalaj-mtg")
+	if err != nil {
+		log.Println("db open error:", err)
+		http.Error(w, "Database error", http.StatusInternalServerError)
+		return
+	}
+	defer db.Close()
+
+	var cnt int
+	if err := db.QueryRow(`SELECT COUNT(*) FROM (SELECT DISTINCT name FROM card) as Derived`).Scan(&cnt); err != nil {
+		log.Println("total query error:", err)
+		http.Error(w, "Database error", http.StatusInternalServerError)
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(map[string]int{"total": cnt})
+}
+
 func getCard(w http.ResponseWriter, r *http.Request) {
 	log.Println("getCard called")
 
@@ -275,6 +315,8 @@ func main() {
 
 	r.HandleFunc("/card", addCard).Methods("POST")
 	r.HandleFunc("/cards", countCards).Methods("GET")
+	r.HandleFunc("/total", total).Methods("GET")
+	r.HandleFunc("/totaluniq", totalUniq).Methods("GET")
 	r.HandleFunc("/cardcolors", cardColors).Methods("POST")
 	r.HandleFunc("/getcard", getCard).Methods("POST")
 	r.HandleFunc("/hello", helloWorld).Methods("GET")
