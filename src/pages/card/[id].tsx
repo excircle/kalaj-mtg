@@ -2,7 +2,6 @@ import { useRouter } from 'next/router'
 import { useState, useEffect } from 'react'
 import Image from 'next/image'
 
-// mirror your Go/Card struct + the API response
 type CardData = {
   id: number
   name: string
@@ -22,6 +21,10 @@ export default function CardPage() {
   const [card, setCard] = useState<CardData | null>(null)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
+
+  const [dupLoading, setDupLoading] = useState(false)
+  const [dupError, setDupError] = useState<string | null>(null)
+  const [newId, setNewId] = useState<number | null>(null)
 
   const apiUrl = process.env.NEXT_PUBLIC_API_URL
 
@@ -50,6 +53,33 @@ export default function CardPage() {
       .finally(() => setLoading(false))
   }, [id, apiUrl])
 
+  const handleDuplicate = async () => {
+    if (!apiUrl || !id) return
+
+    setDupLoading(true)
+    setDupError(null)
+    setNewId(null)
+
+    try {
+      const res = await fetch(`${apiUrl}/duplicate`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id: Number(id) }),
+      })
+      if (!res.ok) {
+        const text = await res.text()
+        throw new Error(text || res.statusText)
+      }
+      const data = (await res.json()) as { new_id: number }
+      setNewId(data.new_id)
+    } catch (err: any) {
+      console.error(err)
+      setDupError(err.message)
+    } finally {
+      setDupLoading(false)
+    }
+  }
+
   if (loading) return <p className="p-4">Loading card…</p>
   if (error)   return <p className="p-4 text-red-600">{error}</p>
   if (!card)  return null
@@ -68,7 +98,32 @@ export default function CardPage() {
           />
         </div>
 
-        <h2 className="text-lg font-medium mb-2">Details</h2>
+        {/* Duplicate Button */}
+        <div className="flex flex-col items-center mt-6">
+          <button
+            onClick={handleDuplicate}
+            disabled={dupLoading}
+            className={`font-bold py-2 px-6 rounded text-white ${
+              dupLoading
+                ? 'bg-gray-400 cursor-not-allowed'
+                : 'bg-blue-500 hover:bg-blue-700'
+            }`}
+          >
+            {dupLoading ? 'Duplicating…' : 'Duplicate'}
+          </button>
+          {newId !== null && (
+            <p className="mt-2 text-green-600">
+              Duplicated! New card ID: {newId}
+            </p>
+          )}
+          {dupError && (
+            <p className="mt-2 text-red-600">
+              {dupError}
+            </p>
+          )}
+        </div>
+
+        <h2 className="text-lg font-medium mb-2 mt-8">Details</h2>
         <div className="relative overflow-x-auto">
           <table className="w-full text-sm text-left text-black-500">
             <thead className="text-xs text-black-700 uppercase bg-gray-50">

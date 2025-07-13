@@ -310,6 +310,49 @@ func getCard(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
+func duplicateCard(w http.ResponseWriter, r *http.Request) {
+	var payload struct {
+		ID int `json:"id"`
+	}
+	if err := json.NewDecoder(r.Body).Decode(&payload); err != nil {
+		http.Error(w, "Invalid JSON payload", http.StatusBadRequest)
+		return
+	}
+	defer r.Body.Close()
+
+	db, err := sql.Open("mysql", "kalaj-mtg:kalaj-mtg-pass@tcp(127.0.0.1:3306)/kalaj-mtg")
+	if err != nil {
+		log.Println("db open error:", err)
+		http.Error(w, "Database error", http.StatusInternalServerError)
+		return
+	}
+	defer db.Close()
+
+	res, err := db.Exec(`
+      INSERT INTO card
+        (name, type, power, toughness, colors, rarity, released_at, img)
+      SELECT
+        name, type, power, toughness, colors, rarity, released_at, img
+      FROM card
+      WHERE id = ?
+    `, payload.ID)
+	if err != nil {
+		log.Println("duplicate exec error:", err)
+		http.Error(w, "Failed to duplicate card", http.StatusInternalServerError)
+		return
+	}
+
+	newID, err := res.LastInsertId()
+	if err != nil {
+		log.Println("fetch lastInsertId error:", err)
+		http.Error(w, "Failed to retrieve new card ID", http.StatusInternalServerError)
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(map[string]int64{"new_id": newID})
+}
+
 func main() {
 	r := mux.NewRouter()
 
@@ -320,6 +363,7 @@ func main() {
 	r.HandleFunc("/cardcolors", cardColors).Methods("POST")
 	r.HandleFunc("/getcard", getCard).Methods("POST")
 	r.HandleFunc("/hello", helloWorld).Methods("GET")
+	r.HandleFunc("/duplicate", duplicateCard).Methods("POST")
 
 	c := cors.New(cors.Options{
 		AllowedOrigins: []string{"*"},
